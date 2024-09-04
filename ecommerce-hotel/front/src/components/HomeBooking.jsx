@@ -163,112 +163,108 @@ const HomeBooking = ({
   };
 
   const handlePopupSubmit = async () => {
-    const namePattern = /^[A-Za-z]+([-][A-Za-z]+)*([ ][A-Za-z]+([-][A-Za-z]+)*)*$/;
+    const namePattern =
+      /^[A-Za-z]+([-][A-Za-z]+)*([ ][A-Za-z]+([-][A-Za-z]+)*)*$/;
     if (!namePattern.test(personalData.fullName)) {
-        setError("Full name should match format");
-        return;
+      setError("Full name should match format");
+      return;
     }
 
     const phonePattern = /^\+?[1-9]\d{0,2}\s?\d{3}\s?\d{3}\s?\d{4}$/;
     if (!phonePattern.test(personalData.phoneNumber)) {
-        setError("Phone number should match the format.");
-        return;
+      setError("Phone number should match the format.");
+      return;
     }
 
     try {
-        let currentRoomId = roomId;
+      let currentRoomId = roomId;
 
-        if (!currentRoomId) {
-            const roomsResponse = await fetch(`/api/v1/rooms`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            });
-
-            if (!roomsResponse.ok) {
-                throw new Error("Failed to fetch rooms.");
-            }
-
-            const response = await roomsResponse.json();
-
-            console.log(response);
-
-            const rooms = response.data?.rooms;
-
-            if (!Array.isArray(rooms)) {
-                throw new Error("Invalid rooms data format.");
-            }
-
-            console.log(formData.location, formData.persons, formData.roomType.toUpperCase());
-
-            const matchingRoom = rooms.find(
-                (room) =>
-                    room.location.toUpperCase() === formData.location.toUpperCase() &&
-                    room.roomType.toUpperCase() === formData.roomType.toUpperCase() &&
-                    room.person === parseInt(formData.persons, 10) &&
-                    room.availability === true
-            );
-
-            if (!matchingRoom) {
-                throw new Error("No matching room found.");
-            }
-
-            currentRoomId = matchingRoom.id;
-        }
-
-        const bookingResponse = await fetch("/api/v1/booking", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                ...formData,
-                ...personalData,
-                roomId: currentRoomId,
-            }),
+      if (!currentRoomId) {
+        const roomsResponse = await fetch(`/api/v1/rooms`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
 
-        if (!bookingResponse.ok) {
-            throw new Error("Booking failed");
+        if (!roomsResponse.ok) {
+          throw new Error("Failed to fetch rooms.");
         }
 
-        const updateResponse = await fetch(`/api/v1/rooms/${currentRoomId}`, {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ availability: false }),
-        });
+        const response = await roomsResponse.json();
 
-        if (!updateResponse.ok) {
-            throw new Error("Failed to update room availability");
+        const rooms = response.data?.rooms;
+
+
+        if (!Array.isArray(rooms)) {
+          throw new Error("Invalid rooms data format.");
         }
 
-        setShowSuccessPopup(true);
-        navigate("/");
+        const matchingRoom = rooms.find(
+          (room) =>
+            room.location.toUpperCase() === formData.location.toUpperCase() &&
+            room.roomType.toUpperCase() === formData.roomType.toUpperCase() &&
+            room.person === parseInt(formData.persons, 10) &&
+            room.availability === true
+        );
+
+        if (!matchingRoom) {
+          throw new Error("No matching room found.");
+        }
+
+        currentRoomId = matchingRoom._id;
+      }
+
+      const bookingResponse = await fetch("/api/v1/booking", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          ...personalData,
+          roomId: currentRoomId,
+        }),
+      });
+
+      if (!bookingResponse.ok) {
+        throw new Error("Booking failed");
+      }
+
+      const updateResponse = await fetch(`/api/v1/rooms/${currentRoomId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ availability: false }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error("Failed to update room availability");
+      }
+
+      setShowSuccessPopup(true);
+      navigate("/");
     } catch (error) {
-        console.error("Error during booking or updating room:", error);
-        setError("An error occurred during booking.");
+      setError("An error occurred during booking.");
     } finally {
-        setShowPopup(false);
-        setFormData({
-            location: "",
-            roomType: "",
-            persons: "",
-            checkIn: "",
-            checkOut: "",
-        });
-        setPersonalData({
-            phoneNumber: "",
-            fullName: "",
-            comments: "",
-        });
+      setShowPopup(false);
+      setFormData({
+        location: "",
+        roomType: "",
+        persons: "",
+        checkIn: "",
+        checkOut: "",
+      });
+      setPersonalData({
+        phoneNumber: "",
+        fullName: "",
+        comments: "",
+      });
     }
 
     setError("");
-};
-
+  };
 
   const toCamelCase = (str) => {
     return str
